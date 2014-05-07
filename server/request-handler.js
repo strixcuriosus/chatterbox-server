@@ -5,6 +5,7 @@
  * this file and include it in basic-server.js so that it actually works.
  * *Hint* Check out the node module documentation at http://nodejs.org/api/modules.html. */
 var url = require("url");
+var qs = require("querystring");
 var defaultCorsHeaders = {
   "access-control-allow-origin": "*",
   "access-control-allow-methods": "GET, POST, PUT, DELETE, OPTIONS",
@@ -20,15 +21,25 @@ var handleResponse = function(){
 var requestHandler = function(request, response) {
   var statusCode = 200;
   // var headers = defaultCorsHeaders;
-  console.log("path: " + url.parse(request.url).pathname);
-  var path = url.parse(request.url).pathname;
+  var requestURL = url.parse(request.url);
+  console.log("path: " + requestURL.pathname);
+  var path = requestURL.pathname;
+  var query = qs.parse(requestURL.query);
+  // console.log("query: ", qs.parse(query));
   if((/^\/classes\//).test(path)){
     if (request.method === "OPTIONS"){
       response.writeHead(200, defaultCorsHeaders);
       response.end();
     } else if (request.method === 'GET') {
+      console.log("the order? ", query.order);
+      var limit = query.limit || 5;
+      if (query.order === "-createdAt") {
+        var result = storage.slice(-limit).reverse();
+      } else {
+        result = storage.slice(0, limit);
+      }
       response.writeHead(200, defaultCorsHeaders);
-      response.end(JSON.stringify({results:storage}));
+      response.end(JSON.stringify({results:result}));
     } else if (request.method === 'POST') {
       var body = '';
       request.on('data', function(chunk){
@@ -36,9 +47,17 @@ var requestHandler = function(request, response) {
       });
       request.on('end', function(){
         console.log("the body: ",body);
-        storage.push(JSON.parse(body));
-        response.writeHead(201, defaultCorsHeaders);
-        response.end();
+        body = JSON.parse(body);
+        if (body.username && body.text){
+          body.roomname = body.roomname || 'messages';
+          body.createdAt = Date.now();
+          storage.push(body);
+          response.writeHead(201, defaultCorsHeaders);
+          response.end();
+        } else {
+          response.writeHead(401, defaultCorsHeaders);
+          response.end();
+        }
       });
     }
   } else {

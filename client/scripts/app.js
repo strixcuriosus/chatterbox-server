@@ -16,7 +16,7 @@ var app = {
       var userName = obj.username;
       var messageText= obj.text;
       var time = obj.createdAt;
-      // var time = $.timeago(obj.createdAt);
+      var time = $.timeago(obj.createdAt);
 
       $("#chats").prepend("<div class='message'></div>");
       $(".message").first().append("<div class=username><a href='#' class=user_link </a>" + "</div>");
