@@ -1,0 +1,132 @@
+diff --git a/client/scripts/app.js b/client/scripts/app.js
+index 62610dd..1e37aa4 100644
+--- a/client/scripts/app.js
++++ b/client/scripts/app.js
+@@ -103,12 +103,9 @@ app.fetch = function() {
+     order: 'createdAt'},
+     contentType: 'application/json',
+     success: function (data) {
+-      data = JSON.parse(data);
+       try {
+         var results = data.results;
+-        console.log(results);
+         _.each(results, function (msg, i) {
+-          console.log(msg);
+           app.addMessage(msg);
+           if(results[i].roomName) {
+            app.addRoom(results[i].roomName);
+diff --git a/server/request-handler.js b/server/request-handler.js
+index 052cf95..90179a4 100644
+--- a/server/request-handler.js
++++ b/server/request-handler.js
+@@ -5,7 +5,6 @@
+  * this file and include it in basic-server.js so that it actually works.
+  * *Hint* Check out the node module documentation at http://nodejs.org/api/modules.html. */
+ 
+-var qs = require('querystring');
+ var storage = [];
+ 
+ 
+@@ -43,29 +42,8 @@ var handleRequest = function(request, response) {
+     }
+     // console.log('you are in chatterbox');
+     if (request.method === 'GET'){
+-      var body = '';
+-      request.on('data', function(data){
+-        body += data;
+-      });
+-      request.on('end', function(){
+-        body = JSON.parse(body);
+-        console.log(body);
+-          var headers = defaultCorsHeaders;
+-
+-        headers['Content-Type'] = "text/plain";
+-
+-        /* .writeHead() tells our server what HTTP status code to send back */
+-        response.writeHead(statusCode, headers);
+-
+-        /* Make sure to always call response.end() - Node will not send
+-         * anything back to the client until you do. The string you pass to
+-         * response.end() will be the body of the response - i.e. what shows
+-         * up in the browser.*/
+-        response.end();
+-
+-      });
+-      // var getResults = {};
+-      // getResults.results = storage;
++      var getResults = {};
++      getResults.results = storage;
+     //   var getResponse = [];
+     //   if ( data.roomname ){
+     //     getResponse = _.filter(storage, function(obj){
+@@ -89,41 +67,37 @@ var handleRequest = function(request, response) {
+     //   responseMessage = JSON.stringify(getResponse);
+       statusCode = 200;
+     } else if (request.method === 'POST'){
+-        var body = '';
+         request.on('data', function(data){
+-          body += data;
++          storage.push( JSON.parse(data));
+         });
+         request.on('end', function(){
+-          body = JSON.parse(body);
++            var headers = defaultCorsHeaders;
+ 
+-          if(body.username && body.text){
+-            body.roomname = body.roomname || '';
+-            body.createdAt = Date.now();
+-            body.messageID = idCount;
+-            storage.push(body);
+-            idCount++;
+-          } else {
+-            statusCode = 400;
+-          }
+-
+-          var headers = defaultCorsHeaders;
+-
+-          headers['Content-Type'] = "text/plain";
++            headers['Content-Type'] = "text/plain";
+ 
+-          /* .writeHead() tells our server what HTTP status code to send back */
+-          response.writeHead(statusCode, headers);
++            /* .writeHead() tells our server what HTTP status code to send back */
++            response.writeHead(statusCode, headers);
+ 
+-          /* Make sure to always call response.end() - Node will not send
+-           * anything back to the client until you do. The string you pass to
+-           * response.end() will be the body of the response - i.e. what shows
+-           * up in the browser.*/
+-          response.end();
++            /* Make sure to always call response.end() - Node will not send
++             * anything back to the client until you do. The string you pass to
++             * response.end() will be the body of the response - i.e. what shows
++             * up in the browser.*/
++            response.end(JSON.stringify(getResults));
+ 
+         });
+         // if ( request.json ) {
+         //   var data = JSON.parse(request.json);
+         //   storage.push(data);
+         // }
++    //   if(data.username && data.text){
++    //     data.roomname = data.roomname || '';
++    //     data.createdAt = Date.now();
++    //     data.messageID = idCount;
++    //     storage.push(data);
++    //     idCount++;
++    //   } else {
++    //     statusCode = 400;
++    //   }
+         statusCode = 201;
+     }
+   }
+@@ -141,8 +115,7 @@ var handleRequest = function(request, response) {
+    * anything back to the client until you do. The string you pass to
+    * response.end() will be the body of the response - i.e. what shows
+    * up in the browser.*/
+-  response.end();
+-  //JSON.stringify(getResults)
++  response.end(JSON.stringify(getResults));
+ };
+ 
+ /* These headers will allow Cross-Origin Resource Sharing (CORS).
